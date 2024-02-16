@@ -25,7 +25,6 @@ export class User {
 		index: this.index,
 		error: this.error,
 		errorText: this.errorText,
-		// wins: this.wins,
 	})
 
 	register = (id: number) => {
@@ -33,7 +32,17 @@ export class User {
 		this.index = id;
 		this.error = false;
 		this.errorText = '';
+		this.wins = 0;
 		usersDB.push(this.getDBInterface())
 	}
 }
 
+export const getWinners = () =>{
+	const table = usersDB.map(user => ({
+			name: user.name,
+			wins: user.wins,
+		}));
+
+		table.sort((w1, w2) => w1.wins - w2.wins);
+		return table || [];
+} 

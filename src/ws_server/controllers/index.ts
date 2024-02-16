@@ -1,6 +1,6 @@
 import { UserDB, wsAPI, wsMsg } from '../types';
 import { generateID, stringifyData } from '../utils';
-import { User } from '../models/usersController';
+import { User, getWinners } from '../models/usersController';
 import { IncomingMessage } from 'http';
 import { wss } from '..';
 import { Room, getRoomById, roomsDB } from '../models/roomsController';
@@ -47,6 +47,9 @@ export const handleWS = (ws: WebSocket, req: IncomingMessage) => {
 				}
 				curUser = user.getDBInterface();
 				ws.send(stringifyData(wsAPI.reg, curUser));
+
+				//broadcast winners table on login
+				broadcast(stringifyData(wsAPI.updateWinners, getWinners()));
 				break;
 
 			case wsAPI.createRoom:
@@ -61,7 +64,6 @@ export const handleWS = (ws: WebSocket, req: IncomingMessage) => {
 				break;
 
 			case wsAPI.joinRoom:
-				console.log('ROOMS: ', roomsDB);
 				const targetRoom = getRoomById(data.indexRoom);
 				targetRoom.addUser(curUser);
 				targetRoom.delete();
@@ -75,9 +77,12 @@ export const handleWS = (ws: WebSocket, req: IncomingMessage) => {
 					idPlayer: curUser.index,
 				}), []);
 
+				break;	
+			
+			case wsAPI.addShips:
 
 				break;
-			}				
+		}
 	};
 }
 

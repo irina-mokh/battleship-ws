@@ -1,9 +1,9 @@
 import { UserDB, wsAPI, wsMsg } from '../types';
 import { generateID, stringifyData } from '../utils';
-import { User, getWinners } from '../models/usersController';
+import { User, getWinners } from './usersController';
 import { IncomingMessage } from 'http';
 import { wss } from '..';
-import { Room, getRoomById, roomsDB } from '../models/roomsController';
+import { Room, getRoomById, roomsDB } from './roomsController';
 
 const CLIENTS = {};
 export const handleWS = (ws: WebSocket, req: IncomingMessage) => {

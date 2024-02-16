@@ -1,6 +1,6 @@
 import { wsMsg, UserDB } from '../types';
 
-const usersDB: UserDB[] = [];
+export const usersDB: UserDB[] = [];
 
 export class User {
 	name: string;
@@ -25,12 +25,12 @@ export class User {
 		index: this.index,
 		error: this.error,
 		errorText: this.errorText,
-		wins: this.wins,
+		// wins: this.wins,
 	})
 
-	register = () => {
+	register = (id: number) => {
 		this.wins = 0;
-		this.index = usersDB.length;
+		this.index = id;
 		this.error = false;
 		this.errorText = '';
 		usersDB.push(this.getDBInterface())

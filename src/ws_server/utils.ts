@@ -1,17 +1,6 @@
-import { Http2ServerRequest } from 'http2';
-import { wsAPI, wsMsg } from './types';
+import { wsAPI } from './types';
 
-export const parseData = (req: string) => {
-	const parsed = JSON.parse(req);
-
-	return {
-		type: parsed.type,
-		data: JSON.parse(parsed.data),
-		id: 0
-	}
-}
-
-export const stringData = (type: wsAPI, data) => {
+export const stringifyData = (type: wsAPI, data: unknown) => {
 
 	return JSON.stringify({
 		type: type,
@@ -19,3 +8,5 @@ export const stringData = (type: wsAPI, data) => {
 		id: 0
 	})
 }
+
+export const generateID = () => Number(String((new Date()).getTime()) + Math.floor((Math.random()*100)));

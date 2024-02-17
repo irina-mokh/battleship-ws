@@ -2,20 +2,12 @@ import { wsMsg, UserDB } from '../types';
 
 export const usersDB: UserDB[] = [];
 
+export interface User extends UserDB { }
 export class User {
-	name: string;
-	password: string;
-	index: number;
-	wins: number;
-	error: boolean;
-	errorText: string;
-
 	constructor ({name, password}) {
 		this.name = name;
 		this.password = password;
 	}
-
-	exists = () => usersDB.find(user => user.name === this.name)
 
 	validPass = () => usersDB.find(user => user.name === this.name).password === this.password
 
@@ -46,3 +38,5 @@ export const getWinners = () =>{
 		table.sort((w1, w2) => w1.wins - w2.wins);
 		return table || [];
 } 
+
+export const userExists = (name: string) => usersDB.find(user => user.name === name)

@@ -2,20 +2,19 @@ import { RoomDB, UserDB } from '../types';
 
 export let roomsDB = [];
 
+export interface Room extends RoomDB { }
 export class Room {
-	roomId: number;
-	roomUsers: Array<Partial<UserDB>>;
 
 	constructor ({index, name}) {
 		this.roomUsers = [{ index, name }];
 		this.roomId = +new Date();
 	}
 
-	exists = (creatorName: string) =>  roomsDB.find(room => room.roomUsers.find(user => user.name === creatorName));
-
 	create = () => {
 		roomsDB.push(this);
 	}
+
+	isMyOwn = (client: Partial<UserDB>) => this.roomUsers.find(user => user.index === client.index)
 
 	addUser = (client: Partial<UserDB>) => {
 		this.roomUsers.push(client);
@@ -27,4 +26,6 @@ export class Room {
 
 }
 
-export const getRoomById = (roomId: number) => roomsDB.find(room => room.roomId === roomId);
+export const roomExists = (creatorName: string) =>  roomsDB.find(room => room.roomUsers.find((user: UserDB) => user.name === creatorName));
+
+export const getRoomById = (roomId: number): Room => roomsDB.find(room => room.roomId === roomId);

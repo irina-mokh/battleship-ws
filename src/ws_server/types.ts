@@ -18,6 +18,12 @@ export interface UserFront {
 	password: string;
 }
 
+export interface GameFront {
+	gameId: number,
+  ships: Array<Ship>
+  indexPlayer: number,
+}
+
 export interface wsMsg {
   type: wsAPI,
   data: string,
@@ -29,9 +35,39 @@ export interface UserDB extends UserFront{
 	index: number;
 	error: boolean;
 	errorText: string;
+
 }
 
 export interface RoomDB {
 	roomId: number;
-	roomUsers: Array<Partial<UserDB>>
+	roomUsers: Array<Partial<UserDB>>	
 }
+
+export interface GameDB {
+	gameId: number;
+	player1: GamePlayer;
+	player2: GamePlayer;
+}
+
+export interface GamePlayerFront {
+	indexPlayer: number;
+	ships: Array<Ship>
+}
+
+export interface GamePlayer {
+	currentPlayerIndex: number;
+	ships: Array<Ship>
+}
+
+type ShipType = "small"|"medium"|"large"|"huge";
+
+interface Ship {
+	type: ShipType;
+	position: {
+		x: number,
+		y: number,
+	},
+	direction: boolean,
+	length: number,
+}
+

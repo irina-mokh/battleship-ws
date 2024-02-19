@@ -1,6 +1,6 @@
 import { wsMsg, UserDB } from '../types';
 
-export const usersDB: UserDB[] = [];
+export const usersDB: User[] = [];
 
 export interface User extends UserDB { }
 export class User {
@@ -25,7 +25,7 @@ export class User {
 		this.error = false;
 		this.errorText = '';
 		this.wins = 0;
-		usersDB.push(this.getDBInterface())
+		usersDB.push(this);
 	}
 }
 
@@ -39,4 +39,4 @@ export const getWinners = () =>{
 		return table || [];
 } 
 
-export const userExists = (name: string) => usersDB.find(user => user.name === name)
+export const userExists: (name: string) => User | undefined = (name) => usersDB.find(user => user.name === name)

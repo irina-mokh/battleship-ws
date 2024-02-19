@@ -1,3 +1,4 @@
+import { FIELD_SIZE } from './controllers/gamesController';
 import { wsAPI } from './types';
 
 export const stringifyData = (type: wsAPI, data: unknown) => {
@@ -40,4 +41,15 @@ export const fontLog = {
 	BgCyan : '\x1b[46m' + '%s\x1b[0m',
 	BgWhite : '\x1b[47m' + '%s\x1b[0m',
 	BgGray : '\x1b[100m' + '%s\x1b[0m'
+}
+
+export function getRandomInt(max: number) {
+  return Math.floor(Math.random() * max);
+}
+
+export function generatePosition () {
+	return {
+		x: getRandomInt(FIELD_SIZE - 1),
+		y: getRandomInt(FIELD_SIZE - 1),
+	}
 }

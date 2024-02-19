@@ -13,21 +13,26 @@ export enum wsAPI {
 	finish = 'finish',
 }
 
+export enum ATTACK_STATUSES {
+	miss = 'miss',
+	killed = 'killed',
+	shot = 'shot',
+}
 export interface UserFront {
 	name: string;
 	password: string;
 }
 
 export interface GameFront {
-	gameId: number,
-  ships: Array<Ship>
-  indexPlayer: number,
+	gameId: number;
+  ships: Array<Ship>;
+  indexPlayer: number;
 }
 
 export interface wsMsg {
-  type: wsAPI,
-  data: string,
-  id: number,
+  type: wsAPI;
+  data: string;
+  id: number;
 }
 
 export interface UserDB extends UserFront{
@@ -40,15 +45,17 @@ export interface UserDB extends UserFront{
 
 export interface RoomDB {
 	roomId: number;
-	roomUsers: Array<Partial<UserDB>>	
+	roomUsers: Array<Partial<UserDB>>;
 }
 
 export interface GameDB {
 	gameId: number;
 	player1: GamePlayer;
 	player2: GamePlayer;
-	field1: Array<Array<string>>
-	field2: Array<Array<string>>
+	field1: Array<Array<string>>;
+	field2: Array<Array<string>>;
+	turnIndex: number;
+	isFirstTurn: boolean;
 }
 
 export interface GamePlayerFront {
@@ -65,11 +72,25 @@ type ShipType = "small"|"medium"|"large"|"huge";
 
 export interface Ship {
 	type: ShipType;
-	position: {
-		x: number,
-		y: number,
-	},
-	direction: boolean,
-	length: number,
+	position: Position,
+	direction: boolean;
+	length: number;
 }
 
+export interface AttackFront extends Position {
+	gameId: number;
+	indexPlayer: number;
+}
+
+export interface Position {
+	x: number;
+	y: number;
+}
+
+export enum Cell {
+	empty = '-',
+	miss = '0',
+	ship = '+',
+	shot = 'x',
+	dead = 'X',
+}

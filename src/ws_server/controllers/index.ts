@@ -1,12 +1,17 @@
-import { RoomDB, UserDB, UserFront, wsAPI, wsMsg } from '../types';
+import { ATTACK_STATUSES, RoomDB, UserDB, UserFront, wsAPI, wsMsg, Position } from '../types';
 import { fontLog, generateID, stringifyData } from '../utils';
-import { User, getWinners, userExists, usersDB } from './usersController';
+import { User, getWinners, userExists } from './usersController';
 import { IncomingMessage } from 'http';
 import { wss } from '..';
 import { Room, getRoomById, roomExists, roomsDB } from './roomsController';
 import { Game, gameExists, gamesDB, getGameById } from './gamesController';
 
 const CLIENTS = {};
+let id1: number;
+let id2: number;
+
+let game: Game;
+
 export const handleWS = (ws: WebSocket, req: IncomingMessage) => {
 	const id = generateID();
 	CLIENTS[id] = ws;
@@ -14,7 +19,7 @@ export const handleWS = (ws: WebSocket, req: IncomingMessage) => {
 	let curUser: UserDB;
 
 	const broadcast = (msg: string, ids = []) => {
-		console.log(fontLog.FgCyan, '->> Broadcast:', msg);
+		console.log(fontLog.BgCyan, '->> Broadcast:', msg);
 		if (ids.length) {
 			console.log(ids);
 			ids.forEach(id => {
@@ -28,6 +33,38 @@ export const handleWS = (ws: WebSocket, req: IncomingMessage) => {
 		}
 	};
 
+	const handleAttack: (position: Position) => void = ({y, x}) => {
+		if (game.turnIndex === curUser.index) {
+			const [status, emptyCells] = game.handleAttack({y, x});
+
+			broadcast((stringifyData(wsAPI.attack, {
+				status,
+				currentPlayer: curUser.index,
+				position: {x, y}
+
+			})), [id1, id2]);
+
+			if (status === ATTACK_STATUSES.miss) {
+				game.toggleTurn();
+				broadcast(stringifyData(wsAPI.turn, {
+					currentPlayer: game.turnIndex,
+				}), [id1, id2]);
+			} else {
+				if (emptyCells.size > 0) {
+					
+					emptyCells.forEach(cell => {
+						broadcast((stringifyData(wsAPI.attack, {
+							status: 'miss',
+							currentPlayer: curUser.index,
+							position: {...cell}
+		
+						})), [id1, id2]);
+					})
+				}
+			}
+		}
+	}
+
 	ws.onerror = () => console.error;
 	
 	ws.onmessage = (msg: {data: string}) => { 
@@ -35,7 +72,7 @@ export const handleWS = (ws: WebSocket, req: IncomingMessage) => {
 		const { type } = request;
 
 		const data =  request.data && JSON.parse(request.data); 
-		console.log(fontLog.BgCyan, data)
+		console.log(fontLog.FgCyan, data)
 		
 		switch (type) {
 			case wsAPI.reg:
@@ -74,6 +111,7 @@ export const handleWS = (ws: WebSocket, req: IncomingMessage) => {
 					// broadcast for TWO users - game creation
 					
 					const [user1, user2] = [...targetRoom.roomUsers];
+
 					broadcast(stringifyData(wsAPI.createGame, {
 						idGame: targetRoom.roomId,
 						idPlayer: user1.index,
@@ -96,16 +134,33 @@ export const handleWS = (ws: WebSocket, req: IncomingMessage) => {
 					const game = getGameById(data.gameId);
 					game.addOpponent(data);
 
+					const {player1, player2, turnIndex} = game;
+					id1 = player1.currentPlayerIndex;
+					id2 = player2.currentPlayerIndex;
+
 					// start game for each user
-					broadcast(stringifyData(wsAPI.startGame, game.player1), [game.player1.currentPlayerIndex]);
-					broadcast(stringifyData(wsAPI.startGame, game.player2), [game.player2.currentPlayerIndex]);
+					broadcast(stringifyData(wsAPI.startGame, player1), [id1]);
+					broadcast(stringifyData(wsAPI.startGame, player2), [id2]);
+					// send turn for both
+					broadcast(stringifyData(wsAPI.turn, {
+						currentPlayer: turnIndex,
+					}), [id1, id2]);
+
 				} else {
-					const game = new Game();
+					game = new Game();
 					game.create(data);
 				}
 				break;
 
+			case wsAPI.randomAttack:
+				const position = game.randomAttack();
+				handleAttack(position);
+				break;
+
 			case wsAPI.attack:
+				const {x, y} = data;
+				handleAttack({y, x})
+				break;
 		}
 	};
 }

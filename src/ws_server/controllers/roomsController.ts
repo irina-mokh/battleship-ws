@@ -26,6 +26,6 @@ export class Room {
 
 }
 
-export const roomExists = (creatorName: string) =>  roomsDB.find(room => room.roomUsers.find((user: UserDB) => user.name === creatorName));
+export const roomExists: (name: string) => Room | undefined  = (creatorName) =>  roomsDB.find(room => room.roomUsers.find((user: UserDB) => user.name === creatorName));
 
-export const getRoomById = (roomId: number): Room => roomsDB.find(room => room.roomId === roomId);
+export const getRoomById: (id: number) => Room | undefined = (roomId): Room => roomsDB.find(room => room.roomId === roomId);

@@ -47,6 +47,8 @@ export interface GameDB {
 	gameId: number;
 	player1: GamePlayer;
 	player2: GamePlayer;
+	field1: Array<Array<string>>
+	field2: Array<Array<string>>
 }
 
 export interface GamePlayerFront {
@@ -56,12 +58,12 @@ export interface GamePlayerFront {
 
 export interface GamePlayer {
 	currentPlayerIndex: number;
-	ships: Array<Ship>
+	ships: Array<Ship>;
 }
 
 type ShipType = "small"|"medium"|"large"|"huge";
 
-interface Ship {
+export interface Ship {
 	type: ShipType;
 	position: {
 		x: number,

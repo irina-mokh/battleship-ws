@@ -35,6 +35,7 @@ export const handleWS = (ws: WebSocket, req: IncomingMessage) => {
 		const { type } = request;
 
 		const data =  request.data && JSON.parse(request.data); 
+		console.log(fontLog.BgCyan, data)
 		
 		switch (type) {
 			case wsAPI.reg:
@@ -71,11 +72,16 @@ export const handleWS = (ws: WebSocket, req: IncomingMessage) => {
 				if (!targetRoom.isMyOwn(curUser)) {
 					targetRoom.addUser(curUser);
 					// broadcast for TWO users - game creation
-					const roomUsersIds = targetRoom.roomUsers.map((u: UserDB)  => u.index);
+					
+					const [user1, user2] = [...targetRoom.roomUsers];
 					broadcast(stringifyData(wsAPI.createGame, {
 						idGame: targetRoom.roomId,
-						idPlayer: curUser.index,
-					}), roomUsersIds);
+						idPlayer: user1.index,
+					}), [user1.index]);
+					broadcast(stringifyData(wsAPI.createGame, {
+						idGame: targetRoom.roomId,
+						idPlayer: user2.index,
+					}), [user2.index]);
 
 					targetRoom.delete();
 					// broadcast ALL: remove room from available
@@ -90,8 +96,6 @@ export const handleWS = (ws: WebSocket, req: IncomingMessage) => {
 					const game = getGameById(data.gameId);
 					game.addOpponent(data);
 
-					ws.send(stringifyData(wsAPI.startGame, curUser));
-
 					// start game for each user
 					broadcast(stringifyData(wsAPI.startGame, game.player1), [game.player1.currentPlayerIndex]);
 					broadcast(stringifyData(wsAPI.startGame, game.player2), [game.player2.currentPlayerIndex]);
@@ -100,6 +104,8 @@ export const handleWS = (ws: WebSocket, req: IncomingMessage) => {
 					game.create(data);
 				}
 				break;
+
+			case wsAPI.attack:
 		}
 	};
 }

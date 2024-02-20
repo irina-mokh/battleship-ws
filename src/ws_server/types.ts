@@ -17,6 +17,7 @@ export enum ATTACK_STATUSES {
 	miss = 'miss',
 	killed = 'killed',
 	shot = 'shot',
+	err = 'error',
 }
 export interface UserFront {
 	name: string;

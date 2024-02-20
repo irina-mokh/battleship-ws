@@ -1,5 +1,5 @@
 import { ATTACK_STATUSES, Cell, GameDB, GameFront, Position, Ship } from '../types';
-import { enemyHasShips, generatePosition, getEmptyNeighbors, isPartOfAliveShip } from '../utils';
+import { enemyHasShips, fontLog, generatePosition, getAffectedCells, isPartOfAliveShip } from '../utils';
 
 export const gamesDB = [];
 export const FIELD_SIZE = 10;
@@ -42,32 +42,42 @@ export class Game {
 		return position;
 	}
 
-	handleAttack: (position: Position) => [ res: string, empty: Set<Position>] = ({y, x}) => {
+	handleAttack: (position: Position) => [ res: string, empty: Set<Position>, killed: Set<Position>] = ({y, x}) => {
 		let status = '';
 		const enemy = this.isFirstTurn ? this.field2 : this.field1;
 		const cell: Cell = enemy[y][x];
 		// a set of empty cells, when any ship is killed
 		let emptyNeighbors: Set<Position> = new Set();
+		let killedShip: Set<Position> = new Set();
 
-		if (cell === Cell.empty) {
-			status = ATTACK_STATUSES.miss;
-			enemy[y][x] = Cell.miss;
-		} else {
-			enemy[y][x] = Cell.shot;
-			if (isPartOfAliveShip(y, x, enemy)){
-				status = ATTACK_STATUSES.shot;
-			} else {
-				status = ATTACK_STATUSES.killed;
-				emptyNeighbors = getEmptyNeighbors(y, x, enemy);
 
-				if (!enemyHasShips(enemy)) {
-					console.log("All af them are dead!");
-					this.winPlayer = this.isFirstTurn ? this.player1.currentPlayerIndex : this.player2.currentPlayerIndex;
+		switch (cell) {
+			case Cell.empty:
+				status = ATTACK_STATUSES.miss;
+				enemy[y][x] = Cell.miss;
+				break;
+			case Cell.ship:
+				enemy[y][x] = Cell.shot;
+				if (isPartOfAliveShip(y, x, enemy)){
+					status = ATTACK_STATUSES.shot;
+				} else {
+					status = ATTACK_STATUSES.killed;
+					[emptyNeighbors, killedShip] = getAffectedCells(y, x, enemy);
+
+					if (!enemyHasShips(enemy)) {
+						this.winPlayer = this.isFirstTurn ? this.player1.currentPlayerIndex : this.player2.currentPlayerIndex;
+					}
 				}
-			}
-		}
-		
-		return [status, emptyNeighbors];
+				break;
+			
+			case Cell.dead:
+			case  Cell.shot:
+			case  Cell.shot:
+				console.log(fontLog.FgRed, 'You have already tried this cell, choose another one');
+				status = ATTACK_STATUSES.err;
+				break;
+			} 
+			return [status, emptyNeighbors, killedShip];
 	}
 }
 

@@ -54,8 +54,9 @@ export function generatePosition () {
 	}
 }
 
-export const getEmptyNeighbors = (y: number, x: number, enemy: Field, emptyNeighbors: Set<Position> = new Set() ) => {
+export const getAffectedCells = (y: number, x: number, enemy: Field, emptyNeighbors: Set<Position> = new Set(), killedShip: Set<Position> = new Set() ) => {
 	// emptyNeighbors - a set of empty cell around ship, pass for recursive call
+	// killedShip - a set of other cells of killed ship, pass for recursive call
 
 	const addCellIfEmpty = (y: number, x: number) => {
 		const curCell = enemy[y][x];
@@ -64,7 +65,12 @@ export const getEmptyNeighbors = (y: number, x: number, enemy: Field, emptyNeigh
 				x, y
 			})
 		} else {
-			if (curCell === Cell.shot) getEmptyNeighbors(y, x, enemy, emptyNeighbors);
+			if (curCell === Cell.shot) {
+				killedShip.add({
+					x, y
+				}); 
+				getAffectedCells(y, x, enemy, emptyNeighbors, killedShip);
+			}
 		}
 	}
 	enemy[y][x] = Cell.dead;
@@ -85,7 +91,7 @@ export const getEmptyNeighbors = (y: number, x: number, enemy: Field, emptyNeigh
 		if (x < FIELD_SIZE - 1) addCellIfEmpty(y + 1, x + 1);
 	}
 
-	return emptyNeighbors;
+	return [emptyNeighbors, killedShip];
 }
 
 

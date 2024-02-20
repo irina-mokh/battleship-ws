@@ -35,30 +35,43 @@ export const handleWS = (ws: WebSocket, req: IncomingMessage) => {
 
 	const handleAttack: (position: Position) => void = ({y, x}) => {
 		if (game.turnIndex === curUser.index) {
-			const [status, emptyCells] = game.handleAttack({y, x});
+			const [status, emptyCells, killedShip] = game.handleAttack({y, x});
 
-			broadcast((stringifyData(wsAPI.attack, {
-				status,
-				currentPlayer: curUser.index,
-				position: {x, y}
+			if (status !== ATTACK_STATUSES.err) {
+				broadcast((stringifyData(wsAPI.attack, {
+					status,
+					currentPlayer: curUser.index,
+					position: {x, y}
 
-			})), [id1, id2]);
+				})), [id1, id2]);
 
-			if (status === ATTACK_STATUSES.miss) {
-				game.toggleTurn();
-				broadcast(stringifyData(wsAPI.turn, {
-					currentPlayer: game.turnIndex,
-				}), [id1, id2]);
-			} else {
-				if (emptyCells.size > 0) {
-					emptyCells.forEach(cell => {
-						broadcast((stringifyData(wsAPI.attack, {
-							status: 'miss',
-							currentPlayer: curUser.index,
-							position: {...cell}
-		
-						})), [id1, id2]);
-					})
+				if (status === ATTACK_STATUSES.miss) {
+					game.toggleTurn();
+					
+				} else {
+					// send miss for all empty cells around
+					if (emptyCells.size > 0) {
+						emptyCells.forEach(cell => {
+							broadcast((stringifyData(wsAPI.attack, {
+								status: 'miss',
+								currentPlayer: curUser.index,
+								position: {...cell}
+			
+							})), [id1, id2]);
+						})
+					}
+
+					// send 'killed' for all ship cells
+					if (killedShip.size > 0) {
+						killedShip.forEach(cell => {
+							broadcast((stringifyData(wsAPI.attack, {
+								status: ATTACK_STATUSES.killed,
+								currentPlayer: curUser.index,
+								position: {...cell}
+			
+							})), [id1, id2]);
+						})
+					}
 
 					if (game.winPlayer) {
 						// finish game for 2 players
@@ -71,6 +84,11 @@ export const handleWS = (ws: WebSocket, req: IncomingMessage) => {
 						broadcast(stringifyData(wsAPI.updateWinners, getWinners()));
 					}
 				}
+
+				//send turn after every valid attack
+				broadcast(stringifyData(wsAPI.turn, {
+					currentPlayer: game.turnIndex,
+				}), [id1, id2]);
 			}
 		}
 	}

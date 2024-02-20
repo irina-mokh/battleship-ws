@@ -1,5 +1,5 @@
 import { FIELD_SIZE } from './controllers/gamesController';
-import { wsAPI } from './types';
+import { Cell, Field, Position, wsAPI } from './types';
 
 export const stringifyData = (type: wsAPI, data: unknown) => {
 
@@ -53,3 +53,74 @@ export function generatePosition () {
 		y: getRandomInt(FIELD_SIZE - 1),
 	}
 }
+
+export const getEmptyNeighbors = (y: number, x: number, enemy: Field, emptyNeighbors: Set<Position> = new Set() ) => {
+	// const emptyNeighbors: Set<Position> = new Set();
+
+	const addCellIfEmpty = (y: number, x: number) => {
+		const curCell = enemy[y][x];
+		if (curCell === Cell.empty || curCell === Cell.miss) {
+			emptyNeighbors.add({
+				x, y
+			})
+		} else {
+			if (curCell === Cell.shot) getEmptyNeighbors(y, x, enemy, emptyNeighbors);
+		}
+	}
+	enemy[y][x] = Cell.dead;
+
+	if (y > 0) {
+		addCellIfEmpty(y - 1 , x);
+		if (x > 0) addCellIfEmpty(y - 1, x - 1);
+		if (x < FIELD_SIZE - 1) addCellIfEmpty(y - 1, x + 1);
+	} 
+
+	if (x > 0) addCellIfEmpty(y, x - 1);
+	if (x < FIELD_SIZE - 1) addCellIfEmpty(y, x + 1);
+	
+
+	if ( y < FIELD_SIZE - 1 ) {
+		addCellIfEmpty(y + 1, x);
+		if (x > 0) addCellIfEmpty(y + 1, x - 1);
+		if (x < FIELD_SIZE - 1) addCellIfEmpty(y + 1, x + 1);
+	}
+
+	return emptyNeighbors;
+}
+
+
+export const isPartOfAliveShip = (y: number, x: number, enemy: Array<Array<Cell>>, shipPartsAround: Set<string> = new Set() ) => {
+	//a set for cells with ships parts nearby
+	// const shipPartsAround: Set<string> = new Set();
+
+	const addCellIfShip = (y: number,  x: number) => {
+		const curCell = enemy[y][x];
+		const cellStr = [y, x, enemy[y][x]].join('-');
+	
+		//  save alive cells of ship
+		if (curCell === Cell.ship) {
+			shipPartsAround.add(cellStr);
+		}
+		// save dead cell if absent
+		if (curCell === Cell.shot)
+			if (!shipPartsAround.has(cellStr)) {
+				shipPartsAround.add(cellStr);
+				 isPartOfAliveShip(y, x, enemy, shipPartsAround);
+			}
+	}
+
+	// check only for directions
+	if (y > 0) addCellIfShip(y - 1, x);
+	if (x > 0) addCellIfShip(y, x - 1);
+	if (y < FIELD_SIZE - 1) addCellIfShip(y + 1, x);
+	if (x < FIELD_SIZE - 1) addCellIfShip(y, x + 1);
+
+	let result = false;
+	shipPartsAround.forEach((cell) => {
+		if(cell.endsWith(Cell.ship)) {
+			result = true;
+		}
+	})
+
+	return result;
+};

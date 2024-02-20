@@ -1,5 +1,5 @@
 import { ATTACK_STATUSES, AttackFront, Cell, GameDB, GameFront, Position, Ship } from '../types';
-import { fontLog, generatePosition, getRandomInt } from '../utils';
+import { generatePosition, getEmptyNeighbors, isPartOfAliveShip } from '../utils';
 
 export const gamesDB = [];
 export const FIELD_SIZE = 10;
@@ -45,85 +45,20 @@ export class Game {
 	handleAttack: (position: Position) => [ res: string, empty: Set<Position>] = ({y, x}) => {
 		let status = '';
 		const enemy = this.isFirstTurn ? this.field2 : this.field1;
-		const cell: string = enemy[y][x];
-
-		const shipParts: Set<string> = new Set();
-		const emptyNeighbors: Set<Position> = new Set();
-
-		const addCellIfShip = (y: number,  x: number) => {
-			const curCell = enemy[y][x];
-			const cellStr = [y, x, enemy[y][x]].join('-');
-
-			//  save alive cells of ship
-			if (curCell === Cell.ship) {
-				shipParts.add(cellStr);
-			}
-			// save dead cell if absent
-			if (curCell === Cell.shot)
-				if (!shipParts.has(cellStr)) {
-					shipParts.add(cellStr);
-				 	isPartOfAliveShip(y, x);
-				}
-		}
-
-		function isPartOfAliveShip(y: number, x: number) {
-			// check only for directions
-			if (y > 0) addCellIfShip(y - 1, x);
-			if (x > 0) addCellIfShip(y, x - 1);
-			if (y < FIELD_SIZE - 1) addCellIfShip(y + 1, x);
-			if (x < FIELD_SIZE - 1) addCellIfShip(y, x + 1);
-
-			let result = false;
-			shipParts.forEach((cell) => {
-				if(cell.endsWith(Cell.ship)) {
-					result = true;
-				}
-			})
-
-			return result;
-		};
-
-		const addCellIfEmpty = (y: number, x: number) => {
-			const curCell = enemy[y][x];
-			if (curCell === Cell.empty || curCell === Cell.miss) {
-				emptyNeighbors.add({
-					x, y
-				})
-			} else {
-				if (curCell === Cell.shot) findEmptyNeighbors(y, x);
-			}
-		}
-
-		function findEmptyNeighbors (y: number, x: number) {
-			enemy[y][x] = Cell.dead;
-
-			if (y > 0) {
-				addCellIfEmpty(y - 1 , x);
-				if (x > 0) addCellIfEmpty(y - 1, x - 1);
-				if (x < FIELD_SIZE - 1) addCellIfEmpty(y - 1, x + 1);
-			} 
-
-			if (x > 0) addCellIfEmpty(y, x - 1);
-			if (x < FIELD_SIZE - 1) addCellIfEmpty(y, x + 1);
-			
-
-			if ( y < FIELD_SIZE - 1 ) {
-				addCellIfEmpty(y + 1, x);
-				if (x > 0) addCellIfEmpty(y + 1, x - 1);
-				if (x < FIELD_SIZE - 1) addCellIfEmpty(y + 1, x + 1);
-			}
-		}
+		const cell: Cell = enemy[y][x];
+		// a set of empty cells, when any ship is killed
+		let emptyNeighbors: Set<Position> = new Set();
 
 		if (cell === Cell.empty) {
 			status = ATTACK_STATUSES.miss;
 			enemy[y][x] = Cell.miss;
 		} else {
 			enemy[y][x] = Cell.shot;
-			if (isPartOfAliveShip(y, x)){
+			if (isPartOfAliveShip(y, x, enemy)){
 				status = ATTACK_STATUSES.shot;
 			} else {
 				status = ATTACK_STATUSES.killed;
-				findEmptyNeighbors(y, x);
+				emptyNeighbors = getEmptyNeighbors(y, x, enemy);
 			}
 		}
 		

@@ -48,12 +48,13 @@ export interface RoomDB {
 	roomUsers: Array<Partial<UserDB>>;
 }
 
+export type Field = Array<Array<Cell>>
 export interface GameDB {
 	gameId: number;
 	player1: GamePlayer;
 	player2: GamePlayer;
-	field1: Array<Array<string>>;
-	field2: Array<Array<string>>;
+	field1: Field;
+	field2: Field;
 	turnIndex: number;
 	isFirstTurn: boolean;
 }

@@ -1,5 +1,5 @@
-import { ATTACK_STATUSES, AttackFront, Cell, GameDB, GameFront, Position, Ship } from '../types';
-import { generatePosition, getEmptyNeighbors, isPartOfAliveShip } from '../utils';
+import { ATTACK_STATUSES, Cell, GameDB, GameFront, Position, Ship } from '../types';
+import { enemyHasShips, generatePosition, getEmptyNeighbors, isPartOfAliveShip } from '../utils';
 
 export const gamesDB = [];
 export const FIELD_SIZE = 10;
@@ -59,6 +59,11 @@ export class Game {
 			} else {
 				status = ATTACK_STATUSES.killed;
 				emptyNeighbors = getEmptyNeighbors(y, x, enemy);
+
+				if (!enemyHasShips(enemy)) {
+					console.log("All af them are dead!");
+					this.winPlayer = this.isFirstTurn ? this.player1.currentPlayerIndex : this.player2.currentPlayerIndex;
+				}
 			}
 		}
 		

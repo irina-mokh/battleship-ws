@@ -1,10 +1,10 @@
-import { ATTACK_STATUSES, RoomDB, UserDB, UserFront, wsAPI, wsMsg, Position } from '../types';
+import { ATTACK_STATUSES, UserFront, wsAPI, wsMsg, Position } from '../types';
 import { fontLog, generateID, stringifyData } from '../utils';
 import { User, getWinners, userExists } from './usersController';
 import { IncomingMessage } from 'http';
 import { wss } from '..';
 import { Room, getRoomById, roomExists, roomsDB } from './roomsController';
-import { Game, gameExists, gamesDB, getGameById } from './gamesController';
+import { Game, gameExists, getGameById } from './gamesController';
 
 const CLIENTS = {};
 let id1: number;
@@ -16,12 +16,12 @@ export const handleWS = (ws: WebSocket, req: IncomingMessage) => {
 	const id = generateID();
 	CLIENTS[id] = ws;
 
-	let curUser: UserDB;
+	let curUser: User;
 
 	const broadcast = (msg: string, ids = []) => {
-		console.log(fontLog.BgCyan, '->> Broadcast:', msg);
+		console.log(fontLog.BgCyan, '->> Broadcast msg:', msg);
 		if (ids.length) {
-			console.log(ids);
+			console.log(fontLog.BgYellow, "CLIENTS: ", ids);
 			ids.forEach(id => {
 				const targetClient = CLIENTS[id];
 				targetClient.send(msg);
@@ -51,7 +51,6 @@ export const handleWS = (ws: WebSocket, req: IncomingMessage) => {
 				}), [id1, id2]);
 			} else {
 				if (emptyCells.size > 0) {
-					
 					emptyCells.forEach(cell => {
 						broadcast((stringifyData(wsAPI.attack, {
 							status: 'miss',
@@ -60,6 +59,17 @@ export const handleWS = (ws: WebSocket, req: IncomingMessage) => {
 		
 						})), [id1, id2]);
 					})
+
+					if (game.winPlayer) {
+						// finish game for 2 players
+						broadcast(stringifyData(wsAPI.finish, {
+							winPlayer: game.winPlayer
+						}), [id1, id2]);
+						// add win
+						curUser.wins++;
+						//broadcast winners table for all users
+						broadcast(stringifyData(wsAPI.updateWinners, getWinners()));
+					}
 				}
 			}
 		}
@@ -72,7 +82,7 @@ export const handleWS = (ws: WebSocket, req: IncomingMessage) => {
 		const { type } = request;
 
 		const data =  request.data && JSON.parse(request.data); 
-		console.log(fontLog.FgCyan, data)
+		console.log(fontLog.FgCyan, 'Received data: ', data)
 		
 		switch (type) {
 			case wsAPI.reg:
@@ -85,8 +95,8 @@ export const handleWS = (ws: WebSocket, req: IncomingMessage) => {
 				} else {
 					user.register(id);
 				}
-				curUser = user.getDBInterface();
-				ws.send(stringifyData(wsAPI.reg, curUser));
+				curUser = user;
+				broadcast(stringifyData(wsAPI.reg, user.getDBInterface()), [curUser.index]);
 
 				//broadcast winners table on login
 				broadcast(stringifyData(wsAPI.updateWinners, getWinners()));

@@ -55,7 +55,7 @@ export function generatePosition () {
 }
 
 export const getEmptyNeighbors = (y: number, x: number, enemy: Field, emptyNeighbors: Set<Position> = new Set() ) => {
-	// const emptyNeighbors: Set<Position> = new Set();
+	// emptyNeighbors - a set of empty cell around ship, pass for recursive call
 
 	const addCellIfEmpty = (y: number, x: number) => {
 		const curCell = enemy[y][x];
@@ -90,8 +90,7 @@ export const getEmptyNeighbors = (y: number, x: number, enemy: Field, emptyNeigh
 
 
 export const isPartOfAliveShip = (y: number, x: number, enemy: Array<Array<Cell>>, shipPartsAround: Set<string> = new Set() ) => {
-	//a set for cells with ships parts nearby
-	// const shipPartsAround: Set<string> = new Set();
+	//a set for cells with ships parts nearby pass for recursive call
 
 	const addCellIfShip = (y: number,  x: number) => {
 		const curCell = enemy[y][x];
@@ -124,3 +123,5 @@ export const isPartOfAliveShip = (y: number, x: number, enemy: Array<Array<Cell>
 
 	return result;
 };
+
+export const enemyHasShips = (enemy: Field) => enemy.find(row => row.find(cell => cell === Cell.ship));

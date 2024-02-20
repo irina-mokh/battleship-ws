@@ -1,4 +1,4 @@
-import { wsMsg, UserDB } from '../types';
+import { UserDB } from '../types';
 
 export const usersDB: User[] = [];
 
@@ -33,10 +33,10 @@ export const getWinners = () =>{
 	const table = usersDB.map(user => ({
 			name: user.name,
 			wins: user.wins,
-		}));
-
-		table.sort((w1, w2) => w1.wins - w2.wins);
-		return table || [];
+		}))
+		.filter(u => u.wins > 0)
+		.sort((w1, w2) => w2.wins - w1.wins);
+		return table;
 } 
 
 export const userExists: (name: string) => User | undefined = (name) => usersDB.find(user => user.name === name)

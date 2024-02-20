@@ -57,6 +57,7 @@ export interface GameDB {
 	field2: Field;
 	turnIndex: number;
 	isFirstTurn: boolean;
+	winPlayer?: number;
 }
 
 export interface GamePlayerFront {

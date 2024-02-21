@@ -1,13 +1,15 @@
 import { RoomDB, UserDB } from '../types';
+import { generateID } from '../utils';
+import { User } from './usersController';
 
 export let roomsDB = [];
 
 export interface Room extends RoomDB { }
 export class Room {
 
-	constructor ({index, name}) {
-		this.roomUsers = [{ index, name }];
-		this.roomId = +new Date();
+	constructor (user: Partial<User>) {
+		this.roomUsers = [user];
+		this.roomId = generateID();
 	}
 
 	create = () => {

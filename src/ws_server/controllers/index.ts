@@ -1,30 +1,30 @@
-import { ATTACK_STATUSES, UserFront, wsAPI, wsMsg, Position } from '../types';
+import { ATTACK_STATUSES, UserFront, wsAPI, wsMsg, Position, BotApi } from '../types';
 import { fontLog, generateID, stringifyData } from '../utils';
-import { User, getWinners, userExists } from './usersController';
-import { IncomingMessage } from 'http';
+import { User, getUserById, getWinners, userExists } from './usersController';
 import { wss } from '..';
 import { Room, getRoomById, roomExists, roomsDB } from './roomsController';
 import { Game, gameExists, getGameById } from './gamesController';
+import { WebSocketServer } from 'ws';
+import { handleBot } from '../bot/botHandlder';
 
 const CLIENTS = {};
-let id1: number;
-let id2: number;
 
-let game: Game;
 
-export const handleWS = (ws: WebSocket, req: IncomingMessage) => {
+export const handleWS = (ws: WebSocketServer) => {
+	let curUser: User;
 	const id = generateID();
+	let singlePlay = false;
 	CLIENTS[id] = ws;
 
-	let curUser: User;
-
 	const broadcast = (msg: string, ids = []) => {
-		console.log(fontLog.BgCyan, '->> Broadcast msg:', msg);
+		console.log(fontLog.BgCyan, '->> Send:', msg);
 		if (ids.length) {
-			console.log(fontLog.BgYellow, "CLIENTS: ", ids);
+			console.log(fontLog.BgCyan, "To clients: ", ids);
 			ids.forEach(id => {
 				const targetClient = CLIENTS[id];
-				targetClient.send(msg);
+				if (targetClient) {
+					targetClient.send(msg);
+				}
 			})
 		} else {
 			wss.clients.forEach((client) => {
@@ -33,28 +33,33 @@ export const handleWS = (ws: WebSocket, req: IncomingMessage) => {
 		}
 	};
 
-	const handleAttack: (position: Position) => void = ({y, x}) => {
-		if (game.turnIndex === curUser.index) {
+	const handleAttack: (position: Position, game: Game, attacking: number) => void = ({y, x}, game, attackingId) => {
+		const user = getUserById(attackingId);
+		const [id1, id2] = game.getPlayersIds();
+
+		if (game.turnIndex === attackingId) {
+			console.log(fontLog.BgGreen, 'handleAttack');
+			console.log(fontLog.BgGreen, attackingId);
+
 			const [status, emptyCells, killedShip] = game.handleAttack({y, x});
 
 			if (status !== ATTACK_STATUSES.err) {
 				broadcast((stringifyData(wsAPI.attack, {
 					status,
-					currentPlayer: curUser.index,
+					currentPlayer: attackingId,
 					position: {x, y}
 
 				})), [id1, id2]);
 
 				if (status === ATTACK_STATUSES.miss) {
 					game.toggleTurn();
-					
 				} else {
 					// send miss for all empty cells around
 					if (emptyCells.size > 0) {
 						emptyCells.forEach(cell => {
 							broadcast((stringifyData(wsAPI.attack, {
 								status: 'miss',
-								currentPlayer: curUser.index,
+								currentPlayer: attackingId,
 								position: {...cell}
 			
 							})), [id1, id2]);
@@ -66,22 +71,24 @@ export const handleWS = (ws: WebSocket, req: IncomingMessage) => {
 						killedShip.forEach(cell => {
 							broadcast((stringifyData(wsAPI.attack, {
 								status: ATTACK_STATUSES.killed,
-								currentPlayer: curUser.index,
+								currentPlayer: attackingId,
 								position: {...cell}
 			
 							})), [id1, id2]);
 						})
 					}
-
+					
 					if (game.winPlayer) {
 						// finish game for 2 players
 						broadcast(stringifyData(wsAPI.finish, {
 							winPlayer: game.winPlayer
 						}), [id1, id2]);
 						// add win
-						curUser.wins++;
-						//broadcast winners table for all users
-						broadcast(stringifyData(wsAPI.updateWinners, getWinners()));
+						if (!singlePlay){
+							user.wins++;
+							//broadcast winners table for all users
+							broadcast(stringifyData(wsAPI.updateWinners, getWinners()));
+						}
 					}
 				}
 
@@ -91,16 +98,20 @@ export const handleWS = (ws: WebSocket, req: IncomingMessage) => {
 				}), [id1, id2]);
 			}
 		}
+		if (singlePlay && game.turnIndex === id1) {
+			ws.emit(BotApi.attack);
+		}
 	}
+	handleBot(ws, curUser);
 
-	ws.onerror = () => console.error;
-	
-	ws.onmessage = (msg: {data: string}) => { 
-		const request: wsMsg = JSON.parse(msg.data);
-		const { type } = request;
+	ws.on('message', async (msg) => { 
+		// curUser = getUserById(id);
 
+		const request: wsMsg = JSON.parse(msg);
+		let { type } = request;
 		const data =  request.data && JSON.parse(request.data); 
-		console.log(fontLog.FgCyan, 'Received data: ', data)
+		console.log(fontLog.BgMagenta, type);
+		console.log(fontLog.FgCyan, 'Received data: ', data);
 		
 		switch (type) {
 			case wsAPI.reg:
@@ -114,10 +125,12 @@ export const handleWS = (ws: WebSocket, req: IncomingMessage) => {
 					user.register(id);
 				}
 				curUser = user;
-				broadcast(stringifyData(wsAPI.reg, user.getDBInterface()), [curUser.index]);
+				broadcast(stringifyData(wsAPI.reg, user.getDBInterface()), [id]);
 
 				//broadcast winners table on login
 				broadcast(stringifyData(wsAPI.updateWinners, getWinners()));
+				//broadcast rooms list
+				broadcast(stringifyData(wsAPI.updateRoom, roomsDB));
 				break;
 
 			case wsAPI.createRoom:
@@ -137,12 +150,11 @@ export const handleWS = (ws: WebSocket, req: IncomingMessage) => {
 				if (!targetRoom.isMyOwn(curUser)) {
 					targetRoom.addUser(curUser);
 					// broadcast for TWO users - game creation
-					
 					const [user1, user2] = [...targetRoom.roomUsers];
 
 					broadcast(stringifyData(wsAPI.createGame, {
-						idGame: targetRoom.roomId,
-						idPlayer: user1.index,
+							idGame: targetRoom.roomId,
+							idPlayer: user1.index,
 					}), [user1.index]);
 					broadcast(stringifyData(wsAPI.createGame, {
 						idGame: targetRoom.roomId,
@@ -163,8 +175,7 @@ export const handleWS = (ws: WebSocket, req: IncomingMessage) => {
 					game.addOpponent(data);
 
 					const {player1, player2, turnIndex} = game;
-					id1 = player1.currentPlayerIndex;
-					id2 = player2.currentPlayerIndex;
+					const [id1, id2] = game.getPlayersIds();
 
 					// start game for each user
 					broadcast(stringifyData(wsAPI.startGame, player1), [id1]);
@@ -175,21 +186,31 @@ export const handleWS = (ws: WebSocket, req: IncomingMessage) => {
 					}), [id1, id2]);
 
 				} else {
-					game = new Game();
+					const game = new Game();
 					game.create(data);
 				}
 				break;
 
 			case wsAPI.randomAttack:
-				const position = game.randomAttack();
-				handleAttack(position);
+				const randomAttackGame = getGameById(data.gameId);
+				const position = await randomAttackGame.randomAttack();
+				handleAttack(position, randomAttackGame, data.indexPlayer);
 				break;
 
 			case wsAPI.attack:
 				const {x, y} = data;
-				handleAttack({y, x})
+				handleAttack({y, x}, getGameById(data.gameId), data.indexPlayer)
+				break;
+
+			case wsAPI.singlePlay:
+				console.log(fontLog.BgWhite, 'cur user', curUser);
+
+				ws.emit(BotApi.start);
+				singlePlay = true;
 				break;
 		}
-	};
-}
+	});
+
+	
+};
 

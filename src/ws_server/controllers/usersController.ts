@@ -25,6 +25,7 @@ export class User {
 		this.error = false;
 		this.errorText = '';
 		this.wins = 0;
+		this.isBot = false;
 		usersDB.push(this);
 	}
 }
@@ -39,4 +40,6 @@ export const getWinners = () =>{
 		return table;
 } 
 
-export const userExists: (name: string) => User | undefined = (name) => usersDB.find(user => user.name === name)
+export const userExists: (name: string) => User | undefined = (name) => usersDB.find(user => user.name === name);
+
+export const getUserById: (id: number) => User | undefined = (id): User => usersDB.find(user => user.index === id);

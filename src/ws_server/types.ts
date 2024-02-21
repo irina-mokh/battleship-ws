@@ -11,6 +11,14 @@ export enum wsAPI {
 	randomAttack = 'randomAttack',
 	turn = 'turn',
 	finish = 'finish',
+	singlePlay = 'single_play'
+}
+
+export enum BotApi {
+	start = 'bot_start',
+	set = 'bot_set_ships',
+	attack = 'bot_attack',
+
 }
 
 export enum ATTACK_STATUSES {
@@ -41,6 +49,7 @@ export interface UserDB extends UserFront{
 	index: number;
 	error: boolean;
 	errorText: string;
+	isBot?: boolean;
 
 }
 

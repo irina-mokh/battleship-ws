@@ -31,14 +31,32 @@ export class Game {
 		this.turnIndex = this.isFirstTurn ? this.player1.currentPlayerIndex : this.player2.currentPlayerIndex ;
 	}
 
-	randomAttack: () => Position = () => {
-		let position = generatePosition();
-		let {x, y} = position;
+	randomAttack: () => Promise<Position> = async () => {
+		let position: Position;
 		const enemy = this.isFirstTurn ? this.field2 : this.field1;
+		let cell = enemy[0][0];
+		let i = 1;
+		do {
+			i++;
+			// try 10 times
+			if (i < 10) {
+				position = generatePosition();
+				let {x, y} = position;
+				cell = enemy[y][x];
+			// then pick first available for shoot cell
+			} else {
+				const search = Cell.empty || Cell.ship;
+				const row = enemy.findIndex(r => r.includes(search));
+				const i = enemy[row].findIndex(c => c == search);
+				position = {
+					y: row,
+					x: i,
+				}
+				break;
+			}
 
-		while (enemy[y][x] == Cell.miss || enemy[y][x] == Cell.dead ||  enemy[y][x] == Cell.shot) {
-			position = generatePosition();
-		}
+		} while (!(cell === Cell.empty || cell === Cell.ship));
+
 		return position;
 	}
 
@@ -71,19 +89,25 @@ export class Game {
 				break;
 			
 			case Cell.dead:
-			case  Cell.shot:
-			case  Cell.shot:
+			case Cell.shot:
+			case Cell.miss:
 				console.log(fontLog.FgRed, 'You have already tried this cell, choose another one');
 				status = ATTACK_STATUSES.err;
 				break;
 			} 
 			return [status, emptyNeighbors, killedShip];
 	}
+
+	getPlayersIds: () => Array<number> = () => {
+		const id1 = this.player1.currentPlayerIndex;
+		const id2 = this.player2.currentPlayerIndex;
+		return [id1, id2];
+	}
 }
 
 export const gameExists : (id: number) => boolean = (id) =>  gamesDB.find(game => game.gameId === id);
 
-export const getGameById: (id: number) => Game = (gameId) => gamesDB.find(room => room.gameId === gameId);
+export const getGameById: (id: number) => Game = (gameId) => gamesDB.find(game => game.gameId === gameId);
 
 const setShips = (ships: Array<Ship>) => {
 	const field: Array<Array<Cell>> = new Array(FIELD_SIZE).fill('0').map(() => new Array(FIELD_SIZE).fill('-'));

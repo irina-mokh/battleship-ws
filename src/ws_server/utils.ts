@@ -58,37 +58,39 @@ export const getAffectedCells = (y: number, x: number, enemy: Field, emptyNeighb
 	// emptyNeighbors - a set of empty cell around ship, pass for recursive call
 	// killedShip - a set of other cells of killed ship, pass for recursive call
 
-	const addCellIfEmpty = (y: number, x: number) => {
-		const curCell = enemy[y][x];
+	const addCellIfAffected = (y: number, x: number) => {
+		let curCell = enemy[y][x];
 		if (curCell === Cell.empty || curCell === Cell.miss) {
 			emptyNeighbors.add({
 				x, y
-			})
+			});
+			enemy[y][x] = Cell.miss;
 		} else {
 			if (curCell === Cell.shot) {
 				killedShip.add({
 					x, y
 				}); 
 				getAffectedCells(y, x, enemy, emptyNeighbors, killedShip);
+				enemy[y][x] = Cell.dead;
 			}
 		}
 	}
 	enemy[y][x] = Cell.dead;
 
 	if (y > 0) {
-		addCellIfEmpty(y - 1 , x);
-		if (x > 0) addCellIfEmpty(y - 1, x - 1);
-		if (x < FIELD_SIZE - 1) addCellIfEmpty(y - 1, x + 1);
+		addCellIfAffected(y - 1 , x);
+		if (x > 0) addCellIfAffected(y - 1, x - 1);
+		if (x < FIELD_SIZE - 1) addCellIfAffected(y - 1, x + 1);
 	} 
 
-	if (x > 0) addCellIfEmpty(y, x - 1);
-	if (x < FIELD_SIZE - 1) addCellIfEmpty(y, x + 1);
+	if (x > 0) addCellIfAffected(y, x - 1);
+	if (x < FIELD_SIZE - 1) addCellIfAffected(y, x + 1);
 	
 
 	if ( y < FIELD_SIZE - 1 ) {
-		addCellIfEmpty(y + 1, x);
-		if (x > 0) addCellIfEmpty(y + 1, x - 1);
-		if (x < FIELD_SIZE - 1) addCellIfEmpty(y + 1, x + 1);
+		addCellIfAffected(y + 1, x);
+		if (x > 0) addCellIfAffected(y + 1, x - 1);
+		if (x < FIELD_SIZE - 1) addCellIfAffected(y + 1, x + 1);
 	}
 
 	return [emptyNeighbors, killedShip];

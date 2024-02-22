@@ -1,3 +1,6 @@
+import WebSocket from 'ws';
+import { User } from './models/user';
+
 export enum wsAPI {
 	reg = 'reg',
 	updateWinners = 'update_winners',
@@ -18,7 +21,6 @@ export enum BotApi {
 	start = 'bot_start',
 	set = 'bot_set_ships',
 	attack = 'bot_attack',
-
 }
 
 export enum ATTACK_STATUSES {
@@ -27,6 +29,7 @@ export enum ATTACK_STATUSES {
 	shot = 'shot',
 	err = 'error',
 }
+
 export interface UserFront {
 	name: string;
 	password: string;
@@ -44,18 +47,24 @@ export interface wsMsg {
   id: number;
 }
 
+export interface ClientDB {
+	ws: WebSocket;
+	singlePlay: boolean;
+	user: User;
+}
+
 export interface UserDB extends UserFront{
 	wins?: number;
 	index: number;
 	error: boolean;
 	errorText: string;
 	isBot?: boolean;
-
 }
 
 export interface RoomDB {
 	roomId: number;
 	roomUsers: Array<Partial<UserDB>>;
+	ids: Array<number>;
 }
 
 export type Field = Array<Array<Cell>>
@@ -77,7 +86,7 @@ export interface GamePlayerFront {
 
 export interface GamePlayer {
 	currentPlayerIndex: number;
-	ships: Array<Ship>;
+	ships?: Array<Ship>;
 }
 
 type ShipType = "small"|"medium"|"large"|"huge";

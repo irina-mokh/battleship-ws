@@ -1,4 +1,4 @@
-import { FIELD_SIZE } from './controllers/gamesController';
+import { FIELD_SIZE } from './models/game';
 import { Cell, Field, Position, wsAPI } from './types';
 
 export const stringifyData = (type: wsAPI, data: unknown) => {

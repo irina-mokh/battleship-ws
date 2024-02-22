@@ -1,45 +1,29 @@
-import { shipsSets } from '../bot/botShips';
-import { wsAPI } from '../types';
-import { fontLog, generateID, getRandomInt, stringifyData } from '../utils';
-import { Room, roomsDB } from './roomsController';
-import { User, usersDB } from './usersController';
-import { EventEmitter } from 'events';
 
-export interface Bot extends User { }
-export class Bot {
-	user: User;
-	room: Room;	
+import { Bot } from '../models/bot';
+import { BotApi } from '../types';
+import {  getUserByIndex, usersDB } from '../models/user';
+import { fontLog } from '../utils';
+import WebSocket from 'ws';
 
-	constructor (user: User) {
-		const id = generateID();
-		this.name = 'bot-'+id;
-		this.index = id;
-		this.user = user;
-		this.isBot = true;
-	}
+export const handleBot = (ws:  WebSocket, userId: number) => {
+	let bot: Bot;
 
-	start = () => {
-		usersDB.push(this);
-		this.room = new Room(this);
-		this.room.create();
-		console.log(fontLog.BgGray, roomsDB);
+	const user = getUserByIndex(userId);
 
-		// console.log('Bot gameId = roomId', this.room.roomId);
-		return stringifyData(wsAPI.joinRoom, {indexRoom: this.room.roomId});
-	}
+	ws.on(BotApi.start, () => { 
+		console.log('SINGLE PLAY');
+		bot = new Bot(user);
+		ws.emit('message', bot.start());
+		// ws.emit(BotApi.set);
+		ws.emit('message', bot.addShips());
 
-	addShips = () => {
-		const set = getRandomInt(shipsSets.length);
-		return stringifyData(wsAPI.addShips, { 
-			ships: shipsSets[set],
-			gameId: this.room.roomId,
-			indexPlayer: this.index,
-		});
-	}
+		console.log('Bot: ', bot.index);
+		console.log(fontLog.BgGray, 'USER DB: ', usersDB);
+	});
 
-	attack = () => stringifyData(wsAPI.randomAttack, {
-		gameId: this.room.roomId,
-		indexPlayer: this.index,
+	ws.on(BotApi.attack, () => {
+		setTimeout(() => {
+			ws.emit('message', bot.attack())}
+			, 1000);
 	})
-		
 }

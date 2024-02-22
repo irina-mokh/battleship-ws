@@ -1,29 +1,42 @@
 import { ATTACK_STATUSES, Cell, GameDB, GameFront, Position, Ship } from '../types';
 import { enemyHasShips, fontLog, generatePosition, getAffectedCells, isPartOfAliveShip } from '../utils';
 
-export const gamesDB = [];
+export let gamesDB = [];
 export const FIELD_SIZE = 10;
 
 export interface Game extends GameDB { }
 export class Game {
-	create = ({gameId, indexPlayer, ships}: GameFront) => {
+	constructor (gameId: number, [id1, id2]: Array<number>) {
 		this.gameId = gameId;
 		this.player1 = {
-			currentPlayerIndex: indexPlayer,
-			ships: ships,
+			currentPlayerIndex: id1,
 		}
-		this.field1 = setShips(ships),
+		this.player2 = {
+			currentPlayerIndex: id2,
+		}
+		this.isFirstTurn = false;
+	}
+
+	create = () => {
 		gamesDB.push(this);
 	}
 
-	addOpponent = (data: GameFront) => {
-		this.player2 = {
-			currentPlayerIndex: data.indexPlayer,
-			ships: data.ships,
+	addFirstPlayer: (data: GameFront) => void = ({ships, indexPlayer}) => {
+		this.player1 = {
+			currentPlayerIndex: indexPlayer,
+			ships: ships,
 		};
-		this.field2 = setShips(data.ships);
-		this.turnIndex = data.indexPlayer;
-		this.isFirstTurn = false;
+		this.field1 = setShips(ships);
+	}
+
+	addSecondPlayer: (data: GameFront) => void = ({indexPlayer, ships}) => {
+		this.player2 = {
+			currentPlayerIndex: indexPlayer,
+			ships: ships,
+		};
+		
+		this.field2 = setShips(ships);
+		this.turnIndex = indexPlayer;
 	}
 
 	toggleTurn = () => {
@@ -31,7 +44,7 @@ export class Game {
 		this.turnIndex = this.isFirstTurn ? this.player1.currentPlayerIndex : this.player2.currentPlayerIndex ;
 	}
 
-	randomAttack: () => Promise<Position> = async () => {
+	randomAttack: () => Position =  () => {
 		let position: Position;
 		const enemy = this.isFirstTurn ? this.field2 : this.field1;
 		let cell = enemy[0][0];
@@ -103,9 +116,11 @@ export class Game {
 		const id2 = this.player2.currentPlayerIndex;
 		return [id1, id2];
 	}
-}
 
-export const gameExists : (id: number) => boolean = (id) =>  gamesDB.find(game => game.gameId === id);
+	delete = () => {
+		gamesDB = gamesDB.filter(g => g.gameId !== this.gameId);
+	}
+}
 
 export const getGameById: (id: number) => Game = (gameId) => gamesDB.find(game => game.gameId === gameId);
 

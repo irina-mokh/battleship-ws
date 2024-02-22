@@ -1,7 +1,6 @@
 import { UserDB } from '../types';
 
 export const usersDB: User[] = [];
-
 export interface User extends UserDB { }
 export class User {
 	constructor ({name, password}) {
@@ -19,9 +18,9 @@ export class User {
 		errorText: this.errorText,
 	})
 
-	register = (id: number) => {
+	register = (index: number, id: number) => {
 		this.wins = 0;
-		this.index = id;
+		this.index = index;
 		this.error = false;
 		this.errorText = '';
 		this.wins = 0;
@@ -40,6 +39,7 @@ export const getWinners = () =>{
 		return table;
 } 
 
-export const userExists: (name: string) => User | undefined = (name) => usersDB.find(user => user.name === name);
 
-export const getUserById: (id: number) => User | undefined = (id): User => usersDB.find(user => user.index === id);
+export const getUserByIndex: (index: number) => User | undefined = (index): User => usersDB.find(user => user.index === index);
+
+export const getUserByName: (name: string) => User | undefined = (name): User => usersDB.find(user => user.name === name);

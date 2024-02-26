@@ -12,7 +12,5 @@ process.on('SIGINT', () => {
 	httpServer.close(() => {
 		console.log(`HTTP server at ${HTTP_PORT} port is closing.`);
 	});
-	wss.close(() => {
-		console.log(`Web socket server at ${WS_PORT} port is closing`);
-	});
+	wss.clients.forEach(ws => ws.close());
 });

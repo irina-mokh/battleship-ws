@@ -1,24 +1,26 @@
 import { clientsDB } from '../models/client';
 import { gamesDB } from '../models/game';
 import { getRoomByUserName, roomsDB } from '../models/room';
-import { User, getWinners, getUserByName, getUserByIndex } from '../models/user';
-import { UserFront, wsAPI } from '../types';
-import { generateID, stringifyData } from '../utils';
+import { User, getWinners, getUserByName } from '../models/user';
 import { gameFinish } from './gameController';
 import { send } from './msgSender';
+import { UserFront, wsAPI } from '../types';
+import { generateID, stringifyData } from '../utils';
 
 export const userRegister = (data: UserFront , id: number) => {
-	// let user = getUserById(id):
 	let user = getUserByName(data.name);
 	if (user) {
-		if(!user.validPass()) {
+		if(!user.validPass(data.password)) {
+			console.log('user exists, wrong pass');
 			user.error = true;
 			user.errorText = 'User already exists, wrong password';
+		} else {
+			user.removeErr();
 		}
-	}  else {
+	} else {
 		user =  new User({...data});
 		const index = generateID();
-		user.register(index, id);
+		user.register(index);
 	}	
 	//send register response
 	send(stringifyData(wsAPI.reg, user.getDBInterface()), [id]);
@@ -31,7 +33,7 @@ export const userRegister = (data: UserFront , id: number) => {
 }
 
 export const userLeave = (id: number) => {
-	const user = getUserByIndex(id);
+	const user = clientsDB.get(id).user;
 	if (user) {
 		//check if user had a room -> delete room 
 		const room = getRoomByUserName(user.name);
@@ -41,11 +43,10 @@ export const userLeave = (id: number) => {
 		}
 
 		// check if user was in a game -> finish game, opponent wins
-		console.log(gamesDB);
-		const game = gamesDB.find(game => game.player1.currentPlayerIndex === user.index || game.player2.currentPlayerIndex === user.index);
+		const game = gamesDB.find(game => game.unorderedIds.includes(id));
 
 		if (game) {
-			const [id1, id2]  = game.getPlayersIds();
+			const [id1, id2]  = game.unorderedIds;
 			const winnerId = id1 === id ? id2 : id1;		
 			userWins(winnerId);
 			game.winPlayer = winnerId;

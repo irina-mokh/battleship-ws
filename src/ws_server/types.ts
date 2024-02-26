@@ -77,6 +77,7 @@ export interface GameDB {
 	turnIndex: number;
 	isFirstTurn: boolean;
 	winPlayer?: number;
+	unorderedIds: Array<number>;
 }
 
 export interface GamePlayerFront {

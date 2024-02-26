@@ -8,7 +8,7 @@ export class User {
 		this.password = password;
 	}
 
-	validPass = () => usersDB.find(user => user.name === this.name).password === this.password
+	validPass = (pass: string) => usersDB.find(user => user.name === this.name).password === pass
 
 	getDBInterface = () => ({
 		name: this.name,
@@ -18,7 +18,7 @@ export class User {
 		errorText: this.errorText,
 	})
 
-	register = (index: number, id: number) => {
+	register = (index: number) => {
 		this.wins = 0;
 		this.index = index;
 		this.error = false;
@@ -26,6 +26,11 @@ export class User {
 		this.wins = 0;
 		this.isBot = false;
 		usersDB.push(this);
+	}
+
+	removeErr =  () => {
+		this.error = false;
+		this.errorText = '';
 	}
 }
 

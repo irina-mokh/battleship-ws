@@ -8,12 +8,7 @@ export interface Game extends GameDB { }
 export class Game {
 	constructor (gameId: number, [id1, id2]: Array<number>) {
 		this.gameId = gameId;
-		this.player1 = {
-			currentPlayerIndex: id1,
-		}
-		this.player2 = {
-			currentPlayerIndex: id2,
-		}
+		this.unorderedIds = [id1, id2];
 		this.isFirstTurn = false;
 	}
 

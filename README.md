@@ -19,9 +19,11 @@ Command* | Description
 
 ## Notes
 
-* User is validated by name: only one user can have same certain name.
+* User is validated by name: only one user can have same certain name. Password is checked while 'reg' operation.
 
-* User can create only 1 room. Any other user can join it. User can't join it's own room.
+* User leaves during the game -> his opponent wins. User leaves and has a room -> room gets deleted.
+
+*  One user can create only 1 room. Any other user can join it. User can't join it's own room. It's allowed for one user to join several rooms of different players.
 
 * Game has a single play mode (game with bot). Bot is not really smart, but it's really random 😊 
 

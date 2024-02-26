@@ -16,7 +16,7 @@ export class Room {
 		roomsDB.push(this);
 	}
 
-	isMyOwn = (userId: number) => this.roomUsers.find(user => user.index === userId)
+	isMyOwn = (username: string) => this.roomUsers.find(user => user.name === username)
 
 	addUser = (client: Partial<UserDB>, id: number) => {
 		this.roomUsers.push(client);

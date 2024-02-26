@@ -1,12 +1,12 @@
 import { Game, getGameById } from '../models/game';
-import { ATTACK_STATUSES, wsAPI, BotApi, AttackFront, GameFront } from '../types';
-import { stringifyData } from '../utils';
 import { send } from './msgSender';
 import { userWins } from './userController';
 import { Room } from '../models/room';
 import { clientsDB } from '../models/client';
+import { ATTACK_STATUSES, wsAPI, BotApi, AttackFront, GameFront } from '../types';
+import { stringifyData } from '../utils';
 
-export const gameCreate = (room: Room, id: number) => {
+export const gameCreate = (room: Room) => {
 	const {roomId, ids} = room;
 	const [id1, id2] = ids;
 
@@ -24,7 +24,7 @@ export const gameCreate = (room: Room, id: number) => {
 	}), [id2]);
 }
 
-export const gameStart = (game: Game, id: number) => {
+export const gameStart = (game: Game) => {
 	const {player1, player2, turnIndex } = game;
 	const [id1, id2] = game.getPlayersIds();
 	// start game for each user
@@ -38,22 +38,15 @@ export const gameStart = (game: Game, id: number) => {
 
 // 2 players added ships -> start_game
 export const gameAddShips = (data: GameFront) => {
-
-	const id = data.indexPlayer;
 	let game = getGameById(data.gameId);
 
-	const [gameId1, gameId2] = game.getPlayersIds();
-	let id1: number, id2: number;
-	let sameOrder = id === gameId1;
-
-	id1 = sameOrder ? gameId1 : gameId2;
-	id2 = sameOrder ? gameId2 : gameId1;
-
-	if(!game.field1) {
-		game.addFirstPlayer(data);
-	} else {
-		game.addSecondPlayer(data);
-		gameStart(game, data.indexPlayer);
+	if (game) {
+		if(!game.field1) {
+			game.addFirstPlayer(data);
+		} else {
+			game.addSecondPlayer(data);
+			gameStart(game);
+		}
 	}
 }
 
@@ -62,11 +55,7 @@ export const handleAttack: (data: AttackFront, id: number) => void = ({x, y, ind
 	const [id1, id2] = game.getPlayersIds();
 	const {singlePlay, ws} = clientsDB.get(id);
 
-
 	if (game.turnIndex === indexPlayer) {
-		// console.log(fontLog.BgGreen, 'handleAttack');
-		// console.log(fontLog.BgGreen, indexPlayer);
-
 		const [status, emptyCells, killedShip] = game.handleAttack({y, x});
 
 		if (status !== ATTACK_STATUSES.err) {
@@ -125,7 +114,7 @@ export const handleAttack: (data: AttackFront, id: number) => void = ({x, y, ind
 }
 
 export const gameFinish = (game: Game) => {
-	const [id1, id2] = game.getPlayersIds();
+	const [id1, id2] = game.unorderedIds;
 	game.delete();
 	// finish game for 2 players
 	send(stringifyData(wsAPI.finish, {
